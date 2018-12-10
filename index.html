@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GITHUB USER REPO</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/jquery.min.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/vue.min.js"></script>
+</head>
+<body class="main-container ">
+<div id="git-detail">
+    <h1 class="text-center">{{ github_user }} Github Repositories</h1>
+    <div>
+        <div class="container container-repo">
+            <div class="row">
+                <div class="col-md-4" v-for="value in user_repositories">
+                      <div class="project-detail border border-primary" style="margin-top:20px;margin-bottom:12px;margin-right: -20px">
+                             <h2 class="text-center">{{ value.name }}</h2>
+                             <span>Project Name: <span><span>{{ value.name }}</span><br>
+                             <span>Description: <span><span>{{ value.description }}</span><br>
+                             <span>Project Url: <span><span><a v-bind:href="value.svn_url" target="_blank">View</a></span><br>
+                             <div class="row">
+                                 <div class="col-md-2" v-for="detail in value.contributors_details">
+                                        <img width="100%" height="100%" v-bind:src="detail.avatar_url">
+                                 </div>
+                             </div>
+                     </div>
+            </div>
+        </div>
+    </div>
+</div>
+        <script type="text/javascript">
+            var vm = new Vue({
+                el: '#git-detail',
+                data: {
+                    github_user: "nkgokul",
+                    user_repositories:''
+                },
+                mounted(){
+                    var username = this.getUrlParameter('q');
+                    if(username){
+                        this.github_user = username;
+                    }
+
+                    startTime = performance.now();  //Run at the beginning of the code
+
+                    function executingAt() {
+                        return (performance.now() - startTime) / 1000;
+                    }
+
+                    async function fetchSingleUsersDetailsWithStats(name) {
+                        try{
+                            console.log("Starting API call for " + name + " at " + executingAt());
+                            userDetails = await fetch("https://api.github.com/users/" + name + "/repos?access_token=3d15a1e6a1217f77f9cf435ff10957e4fd6e8160");
+                            userDetailsJSON = await userDetails.json();
+                            for(userDetail in userDetailsJSON){
+                                try{
+                                    userContributors = await userDetailsJSON[userDetail].contributors_url;
+                                    userContributorsDetails = await fetch(userContributors+"?access_token=3d15a1e6a1217f77f9cf435ff10957e4fd6e8160");
+                                    userContributorsDetailsJSON = await userContributorsDetails.json();
+                                    userDetailsJSON[userDetail]['contributors_details'] =  await userContributorsDetailsJSON;
+                                }catch(e){
+                                    console.log('Error'+e);
+                                }
+                            }
+                            console.log("Finished API call for " + name + " at " + executingAt());
+                            return userDetailsJSON;
+                        }catch(e){
+                             console.log('Error'+e);
+                        }
+                    }
+                    fetchSingleUsersDetailsWithStats(this.github_user).then(function(value){
+                        this.user_repositories = value;
+                    }.bind(this));
+                },
+                methods:{
+                    getUrlParameter: function(sParam) {
+                        var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+                            sURLVariables = sPageURL.split('&'),
+                            sParameterName,
+                            i;
+
+                        for (i = 0; i < sURLVariables.length; i++) {
+                            sParameterName = sURLVariables[i].split('=');
+                            if (sParameterName[0] === sParam) {
+                                return sParameterName[1] === undefined ? true : sParameterName[1];
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+</body>
+</html>
